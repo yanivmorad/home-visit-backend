@@ -1,69 +1,54 @@
-const fs = require("fs").promises;
-const { MEETINGS_DATA_PATH } = require("../config/constants");
-const { getChildById } = require("./childrenData");
+// src/data/meetingsData.js
+const db = require("../db");
+
+// מממש Mapping משדות snake_case ל-camelCase
+const mapMeeting = (row) => ({
+  id: String(row.id),
+  childId: String(row.child_id),
+  date: new Date(row.date).toISOString(),
+  summary: row.summary,
+});
 
 const getAllMeetings = async () => {
-  return JSON.parse(await fs.readFile(MEETINGS_DATA_PATH, "utf-8"));
-};
-
-const writeMeetings = async (data) => {
-  await fs.writeFile(MEETINGS_DATA_PATH, JSON.stringify(data, null, 2));
+  const rows = await db("meetings").select("*");
+  return rows.map(mapMeeting);
 };
 
 const getMeetingsByChildId = async (childId) => {
-  const data = await getAllMeetings();
-  return data.filter((m) => m.childId === childId);
+  const rows = await db("meetings")
+    .where({ child_id: childId })
+    .orderBy("date", "desc");
+  return rows.map(mapMeeting);
 };
 
-const getMeetingById = async (meetingId) => {
-  const data = await getAllMeetings();
-  return data.find((m) => m.id === meetingId);
+const getMeetingById = async (id) => {
+  const row = await db("meetings").where({ id }).first();
+  return row ? mapMeeting(row) : null;
 };
 
-const addMeeting = async (childId, newMeeting) => {
-  // בדיקה שהילד קיים
-  const child = await getChildById(childId);
-  if (!child) return null;
-
-  const data = await getAllMeetings();
-  const meeting = {
-    id: Date.now().toString(),
-    childId,
-    date: newMeeting.date,
-    summary: newMeeting.summary,
-  };
-  data.push(meeting);
-  await writeMeetings(data);
-  return meeting;
+const addMeeting = async (childId, { date, summary }) => {
+  const [row] = await db("meetings")
+    .insert({ child_id: childId, date, summary })
+    .returning("*");
+  return mapMeeting(row);
 };
 
-const updateMeeting = async (meetingId, updatedMeeting) => {
-  const data = await getAllMeetings();
-  const meetingIndex = data.findIndex((m) => m.id === meetingId);
-  if (meetingIndex === -1) return null;
+const updateMeeting = async (id, updates) => {
+  const payload = {};
+  if (updates.childId) payload.child_id = updates.childId;
+  if (updates.date) payload.date = updates.date;
+  if (updates.summary) payload.summary = updates.summary;
 
-  // בדיקה שהילד קיים אם childId משתנה
-  if (updatedMeeting.childId) {
-    const child = await getChildById(updatedMeeting.childId);
-    if (!child) return null;
-  }
-
-  data[meetingIndex] = {
-    ...data[meetingIndex],
-    ...updatedMeeting,
-    id: meetingId,
-  };
-  await writeMeetings(data);
-  return data[meetingIndex];
+  const [row] = await db("meetings")
+    .where({ id })
+    .update(payload)
+    .returning("*");
+  return row ? mapMeeting(row) : null;
 };
 
-const deleteMeeting = async (meetingId) => {
-  let data = await getAllMeetings();
-  const meetingIndex = data.findIndex((m) => m.id === meetingId);
-  if (meetingIndex === -1) return false;
-  data = data.filter((m) => m.id !== meetingId);
-  await writeMeetings(data);
-  return true;
+const deleteMeeting = async (id) => {
+  const count = await db("meetings").where({ id }).del();
+  return count > 0;
 };
 
 module.exports = {
