@@ -8,26 +8,30 @@ const mapChild = (row) => ({
   area: row.area,
   city: row.city,
   address: row.address,
-  // phone_numbers מאוחסן כ־JSONB, חוזר כמערך JS
+  // phone_numbers מאוחסן ב-JSONB ומוחזר כמערך JS
   phoneNumbers: row.phone_numbers || [],
-  // birth_date מאוחסן כ־DATE, כאן הופך ל־ISO string
-  birthDate: row.birth_date ? row.birth_date.toISOString().split("T")[0] : null,
-  // מחרוזת תעודת זהות
+  // birth_date מאוחסן כ-DATE ונשלח כ-'YYYY-MM-DD'
+  birthDate: row.birth_date || null,
+  // תעודת זהות
   idNumber: row.id_number || null,
   frequencyDays: row.frequency_days,
-  lastVisit: row.last_visit ? new Date(row.last_visit).toISOString() : null,
+  // last_visit מאוחסן כ-DATE ונשלח כ-'YYYY-MM-DD'
+  lastVisit: row.last_visit || null,
 });
 
+// Select כל הילדים
 const getAllChildren = async () => {
   const rows = await db("children").select("*");
   return rows.map(mapChild);
 };
 
+// קבלת ילד לפי ID
 const getChildById = async (id) => {
   const row = await db("children").where({ id }).first();
   return row ? mapChild(row) : null;
 };
 
+// הוספת ילד חדש
 const addChild = async ({
   name,
   area,
@@ -54,6 +58,7 @@ const addChild = async ({
   return mapChild(row);
 };
 
+// עדכון מלא של ילד
 const updateChild = async (
   id,
   {
@@ -68,18 +73,11 @@ const updateChild = async (
   }
 ) => {
   const payload = { name, area, city, address };
-  if (phoneNumbers !== undefined) {
+  if (phoneNumbers !== undefined)
     payload.phone_numbers = JSON.stringify(phoneNumbers);
-  }
-  if (birthDate !== undefined) {
-    payload.birth_date = birthDate;
-  }
-  if (idNumber !== undefined) {
-    payload.id_number = idNumber;
-  }
-  if (frequencyDays !== undefined) {
-    payload.frequency_days = frequencyDays;
-  }
+  if (birthDate !== undefined) payload.birth_date = birthDate;
+  if (idNumber !== undefined) payload.id_number = idNumber;
+  if (frequencyDays !== undefined) payload.frequency_days = frequencyDays;
 
   const [row] = await db("children")
     .where({ id })
@@ -88,27 +86,20 @@ const updateChild = async (
   return row ? mapChild(row) : null;
 };
 
+// עדכון חלקי של ילד
 const patchChild = async (id, updates) => {
   const payload = {};
   if (updates.name) payload.name = updates.name;
   if (updates.area) payload.area = updates.area;
   if (updates.city) payload.city = updates.city;
   if (updates.address) payload.address = updates.address;
-  if (updates.phoneNumbers !== undefined) {
+  if (updates.phoneNumbers !== undefined)
     payload.phone_numbers = JSON.stringify(updates.phoneNumbers);
-  }
-  if (updates.birthDate !== undefined) {
-    payload.birth_date = updates.birthDate;
-  }
-  if (updates.idNumber !== undefined) {
-    payload.id_number = updates.idNumber;
-  }
-  if (updates.frequencyDays !== undefined) {
+  if (updates.birthDate !== undefined) payload.birth_date = updates.birthDate;
+  if (updates.idNumber !== undefined) payload.id_number = updates.idNumber;
+  if (updates.frequencyDays !== undefined)
     payload.frequency_days = updates.frequencyDays;
-  }
-  if (updates.lastVisit !== undefined) {
-    payload.last_visit = updates.lastVisit;
-  }
+  if (updates.lastVisit !== undefined) payload.last_visit = updates.lastVisit;
 
   const [row] = await db("children")
     .where({ id })
@@ -117,6 +108,7 @@ const patchChild = async (id, updates) => {
   return row ? mapChild(row) : null;
 };
 
+// מחיקת ילד
 const deleteChild = async (id) => {
   const count = await db("children").where({ id }).del();
   return count > 0;

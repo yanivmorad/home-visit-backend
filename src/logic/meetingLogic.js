@@ -5,31 +5,22 @@ const {
   deleteMeeting,
   updateMeeting,
 } = require("../data/meetingsData");
-const { patchChild, getChildById } = require("../data/childrenData");
 const { handleErrors } = require("../middleware/errorHandler");
 
 // Add meeting handler
 const addMeetingHandler = async (req, res) => {
   try {
-    const { childId, date } = req.body;
-
+    // וידוא שהמשתמש שלח childId, date ו-summary תקינים
     const validationError = validateMeeting(req.body);
     if (validationError) {
       return handleErrors(res, null, validationError, 400);
     }
 
-    const meeting = await addMeeting(childId, req.body);
+    const { childId, date, summary } = req.body;
+    // כל העדכון של lastVisit מתבצע בטרנזקציה ב-addMeeting
+    const meeting = await addMeeting(childId, { date, summary });
     if (!meeting) {
       return handleErrors(res, null, "Child not found", 404);
-    }
-
-    // רק אם התאריך חדש יותר מ-lastVisit
-    const child = await getChildById(childId);
-    const meetingDate = new Date(date);
-    const lastVisitDate = child.lastVisit ? new Date(child.lastVisit) : null;
-
-    if (!lastVisitDate || meetingDate > lastVisitDate) {
-      await patchChild(childId, { lastVisit: date });
     }
 
     return res.status(201).json({ success: true, meeting });
@@ -55,29 +46,17 @@ const deleteMeetingHandler = async (req, res) => {
 // Update meeting handler
 const updateMeetingHandler = async (req, res) => {
   try {
-    const { meetingId } = req.params;
-    const { childId: newChildId, date: newDate, ...rest } = req.body;
-
+    // ולידציה ראשונית
     const validationError = validateMeeting(req.body);
     if (validationError) {
       return handleErrors(res, null, validationError, 400);
     }
 
+    const { meetingId } = req.params;
+    // כל העדכון של lastVisit מתבצע בטרנזקציה ב-updateMeeting
     const meeting = await updateMeeting(meetingId, req.body);
     if (!meeting) {
       return handleErrors(res, null, "Meeting or child not found", 404);
-    }
-
-    // עדכון lastVisit רק אם התאריך שונה והוא חדש יותר
-    if (newDate) {
-      const targetChildId = newChildId || meeting.childId;
-      const child = await getChildById(targetChildId);
-      const meetingDate = new Date(newDate);
-      const lastVisitDate = child.lastVisit ? new Date(child.lastVisit) : null;
-
-      if (!lastVisitDate || meetingDate > lastVisitDate) {
-        await patchChild(targetChildId, { lastVisit: newDate });
-      }
     }
 
     return res.json({ success: true, meeting });
