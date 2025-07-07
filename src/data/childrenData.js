@@ -1,4 +1,5 @@
-// src/data/childrenData.js
+// birth_date ו־last_visit – מאוחסנים ב־PostgreSQL כ־DATE, ומוחזרים ל־Node.js כבר כמחרוזת בפורמט ISO (YYYY-MM-DD).
+
 const db = require("../db");
 
 // ממפה שדות PostgreSQL (snake_case) לאובייקט JS (camelCase)
@@ -8,15 +9,11 @@ const mapChild = (row) => ({
   area: row.area,
   city: row.city,
   address: row.address,
-  // phone_numbers מאוחסן ב-JSONB ומוחזר כמערך JS
   phoneNumbers: row.phone_numbers || [],
-  // birth_date מאוחסן כ-DATE ונשלח כ-'YYYY-MM-DD'
   birthDate: row.birth_date || null,
-  // תעודת זהות
   idNumber: row.id_number || null,
-  frequencyDays: row.frequency_days,
-  // last_visit מאוחסן כ-DATE ונשלח כ-'YYYY-MM-DD'
   lastVisit: row.last_visit || null,
+  category: row.category || null,
 });
 
 // Select כל הילדים
@@ -40,7 +37,7 @@ const addChild = async ({
   phoneNumbers = [],
   birthDate = null,
   idNumber = null,
-  frequencyDays = 0,
+  category = null,
 }) => {
   const [row] = await db("children")
     .insert({
@@ -51,8 +48,8 @@ const addChild = async ({
       phone_numbers: JSON.stringify(phoneNumbers),
       birth_date: birthDate,
       id_number: idNumber,
-      frequency_days: frequencyDays,
       last_visit: null,
+      category,
     })
     .returning("*");
   return mapChild(row);
@@ -69,7 +66,8 @@ const updateChild = async (
     phoneNumbers,
     birthDate,
     idNumber,
-    frequencyDays,
+    lastVisit,
+    category,
   }
 ) => {
   const payload = { name, area, city, address };
@@ -77,7 +75,8 @@ const updateChild = async (
     payload.phone_numbers = JSON.stringify(phoneNumbers);
   if (birthDate !== undefined) payload.birth_date = birthDate;
   if (idNumber !== undefined) payload.id_number = idNumber;
-  if (frequencyDays !== undefined) payload.frequency_days = frequencyDays;
+  if (lastVisit !== undefined) payload.last_visit = lastVisit;
+  if (category !== undefined) payload.category = category;
 
   const [row] = await db("children")
     .where({ id })
@@ -97,9 +96,8 @@ const patchChild = async (id, updates) => {
     payload.phone_numbers = JSON.stringify(updates.phoneNumbers);
   if (updates.birthDate !== undefined) payload.birth_date = updates.birthDate;
   if (updates.idNumber !== undefined) payload.id_number = updates.idNumber;
-  if (updates.frequencyDays !== undefined)
-    payload.frequency_days = updates.frequencyDays;
   if (updates.lastVisit !== undefined) payload.last_visit = updates.lastVisit;
+  if (updates.category !== undefined) payload.category = updates.category;
 
   const [row] = await db("children")
     .where({ id })

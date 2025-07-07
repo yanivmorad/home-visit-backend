@@ -1,7 +1,7 @@
 // src/utils/validation.js
 
 const validateChild = (child) => {
-  const requiredFields = ["name", "area", "city", "phoneNumbers"];
+  const requiredFields = ["name"];
   for (const field of requiredFields) {
     if (!child[field]) {
       return `Missing required field: ${field}`;

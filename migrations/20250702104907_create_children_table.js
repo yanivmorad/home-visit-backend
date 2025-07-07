@@ -1,15 +1,15 @@
 exports.up = async function (knex) {
   await knex.schema.createTable("children", (table) => {
     table.increments("id").primary();
-    table.string("name").notNullable();
-    table.string("area").notNullable();
-    table.string("city").notNullable();
-    table.string("address").notNullable();
-    table.jsonb("phone_numbers").defaultTo("[]"); // מערך של מספרי טלפון
-    table.date("birth_date").nullable(); // תאריך לידה
-    table.string("id_number").nullable(); // תעודת
-    table.integer("frequency_days").notNullable().defaultTo(0);
-    table.timestamp("last_visit", { useTz: false }).nullable();
+    table.string("name").notNullable(); // רק זה חובה
+    table.string("area").nullable(); // כל שאר השדות – אופציונליים
+    table.string("city").nullable();
+    table.string("address").nullable();
+    table.jsonb("phone_numbers").defaultTo("[]"); // ברירת מחדל למערך ריק
+    table.date("birth_date").nullable();
+    table.string("id_number").nullable();
+    table.date("last_visit").nullable(); // הוספנו DATE במקום TIMESTAMP
+    table.string("category").nullable(); // השדה החדש
   });
 };
 

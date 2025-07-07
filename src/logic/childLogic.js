@@ -42,8 +42,14 @@ const getChildDetails = async (childId) => {
   return { ...child, ...urgency, meetings };
 };
 
+const getChildrenByCategory = async (category) => {
+  const children = await getAllChildren();
+  return children.filter((child) => child.category === category);
+};
+
 module.exports = {
   calculateUrgency,
   prioritizeChildren,
   getChildDetails,
+  getChildrenByCategory,
 };
