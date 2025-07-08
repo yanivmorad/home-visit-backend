@@ -1,5 +1,3 @@
-// birth_date ו־last_visit – מאוחסנים ב־PostgreSQL כ־DATE, ומוחזרים ל־Node.js כבר כמחרוזת בפורמט ISO (YYYY-MM-DD).
-
 const db = require("../db");
 
 // ממפה שדות PostgreSQL (snake_case) לאובייקט JS (camelCase)
@@ -14,6 +12,7 @@ const mapChild = (row) => ({
   idNumber: row.id_number || null,
   lastVisit: row.last_visit || null,
   category: row.category || null,
+  legalRepresentative: row.legal_representative || null, // ✅ חדש
 });
 
 // Select כל הילדים
@@ -38,6 +37,7 @@ const addChild = async ({
   birthDate = null,
   idNumber = null,
   category = null,
+  legalRepresentative = null, // ✅ חדש
 }) => {
   const [row] = await db("children")
     .insert({
@@ -50,6 +50,7 @@ const addChild = async ({
       id_number: idNumber,
       last_visit: null,
       category,
+      legal_representative: legalRepresentative, // ✅ חדש
     })
     .returning("*");
   return mapChild(row);
@@ -68,6 +69,7 @@ const updateChild = async (
     idNumber,
     lastVisit,
     category,
+    legalRepresentative, // ✅ חדש
   }
 ) => {
   const payload = { name, area, city, address };
@@ -77,6 +79,8 @@ const updateChild = async (
   if (idNumber !== undefined) payload.id_number = idNumber;
   if (lastVisit !== undefined) payload.last_visit = lastVisit;
   if (category !== undefined) payload.category = category;
+  if (legalRepresentative !== undefined)
+    payload.legal_representative = legalRepresentative; // ✅ חדש
 
   const [row] = await db("children")
     .where({ id })
@@ -98,6 +102,8 @@ const patchChild = async (id, updates) => {
   if (updates.idNumber !== undefined) payload.id_number = updates.idNumber;
   if (updates.lastVisit !== undefined) payload.last_visit = updates.lastVisit;
   if (updates.category !== undefined) payload.category = updates.category;
+  if (updates.legalRepresentative !== undefined)
+    payload.legal_representative = updates.legalRepresentative; // ✅ חדש
 
   const [row] = await db("children")
     .where({ id })

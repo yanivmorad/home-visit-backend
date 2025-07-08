@@ -9,7 +9,7 @@ exports.up = async function (knex) {
     table.date("birth_date").nullable();
     table.string("id_number").nullable();
     table.date("last_visit").nullable(); // הוספנו DATE במקום TIMESTAMP
-    table.string("category").nullable(); // השדה החדש
+    table.string("category").nullable();
   });
 };
 
