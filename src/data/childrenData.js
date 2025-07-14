@@ -12,7 +12,7 @@ const mapChild = (row) => ({
   idNumber: row.id_number || null,
   lastVisit: row.last_visit || null,
   category: row.category || null,
-  legalRepresentative: row.legal_representative || null, // ✅ חדש
+  legalRepresentative: row.legal_representative || null,
 });
 
 // Select כל הילדים
